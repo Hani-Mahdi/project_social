@@ -72,40 +72,58 @@ const PostBuilder = () => {
 
   // Load existing draft data if videoId is provided
   useEffect(() => {
+    let cancelled = false;
+
     async function loadDraft() {
       if (!existingVideoId || !user) return;
-      
+
       setLoadingDraft(true);
       setIsEditMode(true);
-      
+
       try {
         const videoData = await getVideoWithPosts(existingVideoId);
-        
+
+        // Check if component is still mounted
+        if (cancelled || !videoData) return;
+
         // Set video data
         setCurrentVideoUrl(videoData.public_url);
         setCurrentVideoName(videoData.title || "Untitled");
         setTitle(videoData.title || "");
         setCaption(videoData.caption || "");
-        
-        // Set platforms from posts
+
+        // Set platforms from posts - create reverse platform map
+        const reversePlatformMap: Record<string, string> = {
+          'tiktok': 'TikTok',
+          'instagram': 'Instagram',
+          'youtube': 'YouTube',
+          'twitter': 'Twitter'
+        };
+
         if (videoData.posts && videoData.posts.length > 0) {
-          const platformNames = videoData.posts.map(post => {
-            const platformKey = post.platform;
-            return platformMap[platformKey] || platformKey;
-          });
+          const platformNames = videoData.posts.map(post =>
+            reversePlatformMap[post.platform] || post.platform
+          );
           setSelectedPlatforms(platformNames);
         }
-        
+
         setIsSaved(true); // Mark as saved since we're loading existing data
       } catch (error) {
+        if (cancelled) return;
         console.error("Failed to load draft:", error);
         setSaveError("Failed to load draft data");
       } finally {
-        setLoadingDraft(false);
+        if (!cancelled) {
+          setLoadingDraft(false);
+        }
       }
     }
-    
+
     loadDraft();
+
+    return () => {
+      cancelled = true;
+    };
   }, [existingVideoId, user]);
 
   // Always show save modal if video is uploaded and not yet saved
@@ -157,28 +175,33 @@ const PostBuilder = () => {
     setIsSaved(false);
   };
 
+  // Shared function to ensure video record exists
+  const ensureVideoRecord = async (): Promise<string> => {
+    if (videoId) return videoId;
+
+    const video = await createVideo({
+      user_id: user!.id,
+      title: title || currentVideoName || videoName || "Untitled",
+      storage_path: storagePath || currentVideoUrl || videoUrl,
+      public_url: currentVideoUrl || videoUrl,
+      caption,
+      status: 'draft'
+    });
+
+    setVideoId(video.id);
+    return video.id;
+  };
+
   const handlePost = async () => {
     if (!user || (!currentVideoUrl && !videoUrl)) return;
-    
+
     setSavingDraft(true);
     setSaveError(null);
-    
+
     try {
-      // Create video record if it doesn't exist
-      let currentVideoId = videoId;
-      if (!currentVideoId) {
-        const video = await createVideo({
-          user_id: user.id,
-          title: title || currentVideoName || videoName || "Untitled",
-          storage_path: storagePath || currentVideoUrl || videoUrl,
-          public_url: currentVideoUrl || videoUrl,
-          caption,
-          status: 'draft'
-        });
-        currentVideoId = video.id;
-        setVideoId(currentVideoId);
-      }
-      
+      // Ensure video record exists
+      const currentVideoId = await ensureVideoRecord();
+
       // Save draft with platforms and title
       await saveDraft({
         videoId: currentVideoId,
@@ -187,7 +210,7 @@ const PostBuilder = () => {
         platforms: selectedPlatforms.map(p => platformMap[p]),
         scheduleType: 'now'
       });
-      
+
       setIsSaved(true);
       console.log("Posted to:", selectedPlatforms);
     } catch (err) {
@@ -199,27 +222,15 @@ const PostBuilder = () => {
 
   const handleSaveDraft = async () => {
     if (!user || (!currentVideoUrl && !videoUrl)) return;
-    
+
     setSavingDraft(true);
     setSaveError(null);
-    
+
     try {
-      // Create video record if it doesn't exist
-      let currentVideoId = videoId;
-      if (!currentVideoId) {
-        const video = await createVideo({
-          user_id: user.id,
-          title: title || currentVideoName || videoName || "Untitled",
-          storage_path: storagePath || currentVideoUrl || videoUrl,
-          public_url: currentVideoUrl || videoUrl,
-          caption,
-          status: 'draft'
-        });
-        currentVideoId = video.id;
-        setVideoId(currentVideoId);
-      }
-      
-      // Save draft with platforms and title
+      // Ensure video record exists
+      const currentVideoId = await ensureVideoRecord();
+
+      // Save draft with platforms and title (only if platforms selected)
       if (selectedPlatforms.length > 0) {
         await saveDraft({
           videoId: currentVideoId,
@@ -229,13 +240,11 @@ const PostBuilder = () => {
           scheduleType
         });
       }
-      
+
       setIsSaved(true);
-      
-      // Navigate back to dashboard after saving
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 500);
+
+      // Navigate back to dashboard after saving (use navigate instead of setTimeout)
+      navigate("/dashboard");
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : "Failed to save draft");
     } finally {

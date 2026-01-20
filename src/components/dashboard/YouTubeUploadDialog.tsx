@@ -43,9 +43,7 @@ export function YouTubeUploadDialog({ isOpen, onClose }: YouTubeUploadDialogProp
 
     try {
       const uploadResult = await uploadToYouTube({
-        videoPath: selectedVideo.storage_path,
-        title: selectedVideo.title || "Untitled Video",
-        description: selectedVideo.caption || "",
+        videoId: selectedVideo.id,
         privacy: 'private'
       });
 

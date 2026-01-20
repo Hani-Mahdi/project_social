@@ -152,7 +152,11 @@ const Dashboard = () => {
 
   // Filter videos by platform
   const filteredVideos = selectedPlatform
-    ? videos.filter(v => v.posts?.some(p => p.platform === platforms.find(pl => pl.name === selectedPlatform)?.key))
+    ? videos.filter(v => {
+        const platform = platforms.find(pl => pl.name === selectedPlatform);
+        if (!platform) return false;
+        return v.posts?.some(p => p.platform === platform.key) ?? false;
+      })
     : videos;
 
   // Loading state

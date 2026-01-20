@@ -20,22 +20,29 @@ export function useAuth() {
     initialized: false
   })
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const isLoggedInRef = useRef(false)
 
-  // Reset inactivity timer
+  // Update ref when user state changes
+  useEffect(() => {
+    isLoggedInRef.current = !!authState.user
+  }, [authState.user])
+
+  // Reset inactivity timer - stable reference, no dependencies
   const resetInactivityTimer = useCallback(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
+      timeoutRef.current = null
     }
-    
+
     // Only set timeout if user is logged in
-    if (authState.user) {
+    if (isLoggedInRef.current) {
       timeoutRef.current = setTimeout(async () => {
         console.log('Session timeout due to inactivity')
         await signOut()
-        window.location.href = '/login?timeout=true'
+        window.location.href = '/auth?timeout=true'
       }, INACTIVITY_TIMEOUT)
     }
-  }, [authState.user])
+  }, [])
 
   // Set up activity listeners for session timeout
   useEffect(() => {

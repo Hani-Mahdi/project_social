@@ -104,13 +104,14 @@ export function VideoUploader({ onUploadComplete }: VideoUploaderProps) {
         const newStats = await getFreeBucketStats();
         setUploadStats(newStats);
         
-        // Navigate to post builder with video URL and storage path
+        // Navigate to post builder with video details (video already saved in DB)
         setTimeout(() => {
           navigate("/dashboard/post", { 
             state: { 
               videoUrl: result.url,
               storagePath: result.path,
-              videoName: selectedFile.name 
+              videoName: selectedFile.name,
+              videoId: result.videoId  // Pass the database video ID
             } 
           });
         }, 1000);

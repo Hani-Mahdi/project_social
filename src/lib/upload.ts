@@ -12,9 +12,10 @@ export interface UploadProgress {
 }
 
 const MAX_FILE_SIZE = 52428800 // 50MB
+const ALLOWED_VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv', 'wmv', 'm4v']
 
 export async function uploadVideo(
-  file: File, 
+  file: File,
   userId: string,
   onProgress?: (progress: UploadProgress) => void
 ): Promise<UploadResult> {
@@ -28,8 +29,13 @@ export async function uploadVideo(
     throw new Error('Please upload a video file.')
   }
 
-  // Create unique filename
-  const fileExt = file.name.split('.').pop()
+  // Create unique filename with validated extension
+  const fileExt = file.name.split('.').pop()?.toLowerCase()
+
+  if (!fileExt || !ALLOWED_VIDEO_EXTENSIONS.includes(fileExt)) {
+    throw new Error(`Invalid video format. Allowed formats: ${ALLOWED_VIDEO_EXTENSIONS.join(', ')}`)
+  }
+
   const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
   const filePath = `${userId}/${fileName}`
 

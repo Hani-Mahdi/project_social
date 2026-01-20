@@ -398,35 +398,71 @@ export interface SaveDraftInput {
 }
 
 export async function saveDraft(input: SaveDraftInput): Promise<VideoWithPosts> {
-  // Update video
-  const video = await updateVideo(input.videoId, {
-    title: input.title,
-    caption: input.caption,
-    status: input.scheduleType === 'schedule' ? 'scheduled' : 'draft',
-    scheduled_at: input.scheduleType === 'schedule' ? input.scheduledAt : null
-  });
+  // Store original video state for potential rollback
+  const originalVideo = await getVideoById(input.videoId);
 
-  // Create/update posts for each platform
-  const posts: Post[] = [];
-  for (const platform of input.platforms) {
-    const post = await createOrUpdatePost(input.videoId, platform, {
+  try {
+    // Update video
+    const video = await updateVideo(input.videoId, {
+      title: input.title,
+      caption: input.caption,
       status: input.scheduleType === 'schedule' ? 'scheduled' : 'draft',
       scheduled_at: input.scheduleType === 'schedule' ? input.scheduledAt : null
     });
-    posts.push(post);
-  }
 
-  // Remove posts for platforms not selected
-  const allPlatforms: Platform[] = ['tiktok', 'instagram', 'youtube', 'twitter'];
-  const platformsToRemove = allPlatforms.filter(p => !input.platforms.includes(p));
-  
-  if (platformsToRemove.length > 0) {
-    await supabase
-      .from('posts')
-      .delete()
-      .eq('video_id', input.videoId)
-      .in('platform', platformsToRemove);
-  }
+    // Create/update posts for each platform with error collection
+    const posts: Post[] = [];
+    const errors: Error[] = [];
 
-  return { ...video, posts };
+    for (const platform of input.platforms) {
+      try {
+        const post = await createOrUpdatePost(input.videoId, platform, {
+          status: input.scheduleType === 'schedule' ? 'scheduled' : 'draft',
+          scheduled_at: input.scheduleType === 'schedule' ? input.scheduledAt : null
+        });
+        posts.push(post);
+      } catch (err) {
+        errors.push(err instanceof Error ? err : new Error(`Failed to save ${platform} post`));
+      }
+    }
+
+    // If any platform fails, throw aggregate error
+    if (errors.length > 0 && posts.length === 0) {
+      throw new Error(`Failed to save posts: ${errors.map(e => e.message).join(', ')}`);
+    }
+
+    // Remove posts for platforms not selected
+    const allPlatforms: Platform[] = ['tiktok', 'instagram', 'youtube', 'twitter'];
+    const platformsToRemove = allPlatforms.filter(p => !input.platforms.includes(p));
+
+    if (platformsToRemove.length > 0) {
+      const { error: deleteError } = await supabase
+        .from('posts')
+        .delete()
+        .eq('video_id', input.videoId)
+        .in('platform', platformsToRemove);
+
+      if (deleteError) {
+        console.error('Failed to remove old platform posts:', deleteError);
+        // Don't fail the entire operation if deletion fails
+      }
+    }
+
+    return { ...video, posts };
+  } catch (err) {
+    // Attempt to rollback video update if we have original state
+    if (originalVideo) {
+      try {
+        await updateVideo(input.videoId, {
+          title: originalVideo.title,
+          caption: originalVideo.caption,
+          status: originalVideo.status,
+          scheduled_at: originalVideo.scheduled_at
+        });
+      } catch (rollbackErr) {
+        console.error('Failed to rollback video update:', rollbackErr);
+      }
+    }
+    throw err;
+  }
 }

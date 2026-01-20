@@ -28,6 +28,7 @@ export interface VideoStats {
 export interface UploadResult {
   path: string;
   url: string;
+  videoId: string;  // ID of the created video record
 }
 
 /**
@@ -78,13 +79,13 @@ export async function uploadVideoToFreeBucket(file: File): Promise<UploadResult>
   if (countError) throw countError;
 
   if (count !== null && count >= MAX_VIDEOS) {
-    throw new Error(`Upload limit reached. Free users can only upload ${MAX_VIDEOS} videos.`);
+    throw new Error(`Upload limit reached. Free users can only upload ${MAX_VIDEOS} videos. Please delete existing videos to upload new ones.`);
   }
 
   // 2. Upload to FreeBucket
   const fileName = `${Date.now()}-${file.name}`;
   const filePath = `${user.id}/${fileName}`;
-  
+
   const { data: uploadData, error: uploadError } = await supabase.storage
     .from(BUCKET_NAME)
     .upload(filePath, file);
@@ -98,9 +99,40 @@ export async function uploadVideoToFreeBucket(file: File): Promise<UploadResult>
     .from(BUCKET_NAME)
     .getPublicUrl(uploadData.path);
 
+  // 3. Auto-create video record in database
+  // Note: Database trigger will also enforce the limit server-side (see enforce_upload_limit.sql)
+  const { data: videoRecord, error: videoError } = await supabase
+    .from('videos')
+    .insert({
+      user_id: user.id,
+      title: file.name.replace(/\.[^/.]+$/, ''), // Use filename without extension as title
+      storage_path: uploadData.path,
+      public_url: urlData.publicUrl,
+      status: 'draft'
+    })
+    .select()
+    .single();
+
+  if (videoError) {
+    // Rollback: delete the uploaded file if database insert fails
+    try {
+      await supabase.storage.from(BUCKET_NAME).remove([uploadData.path]);
+    } catch (cleanupError) {
+      console.error('Failed to cleanup uploaded file:', cleanupError);
+    }
+
+    // Check if error is due to upload limit trigger
+    if (videoError.message?.includes('Upload limit reached')) {
+      throw new Error(`Upload limit reached. Free users can only upload ${MAX_VIDEOS} videos. Please delete existing videos to upload new ones.`);
+    }
+
+    throw videoError;
+  }
+
   return {
     path: uploadData.path,
-    url: urlData.publicUrl
+    url: urlData.publicUrl,
+    videoId: videoRecord.id
   };
 }
 
