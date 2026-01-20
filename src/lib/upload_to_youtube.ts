@@ -43,25 +43,27 @@ export async function uploadToYouTube(
       throw new Error('Video not found or access denied');
     }
 
-    console.log('Creating post record for YouTube upload...');
+    console.log('Creating/updating post record for YouTube upload...');
 
-    // Create a post record in the database (matches schema)
+    // Create or update a post record in the database (uses upsert to handle existing records)
     const { data: post, error: postError } = await supabase
       .from('posts')
-      .insert({
+      .upsert({
         video_id: videoId,
         user_id: user.id,
         platform: 'youtube',
         status: 'draft'
+      }, {
+        onConflict: 'video_id,platform'
       })
       .select()
       .single();
 
     if (postError) {
-      console.error('Post creation error:', postError);
+      console.error('Post creation/update error:', postError);
       throw postError;
     }
-    if (!post) throw new Error('Failed to create post record');
+    if (!post) throw new Error('Failed to create/update post record');
 
     console.log('Post created:', post.id);
 

@@ -13,6 +13,9 @@ lerna-debug.log*
 .env.development
 .env.production
 
+# MCP config (contains auth tokens)
+.mcp.json
+
 node_modules
 dist
 dist-ssr
