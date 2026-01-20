@@ -68,33 +68,28 @@ export async function uploadToYouTube(
 
     console.log('Post created:', post.id);
 
-    // Call the YouTube upload edge function
-    console.log('Calling YouTube upload edge function...');
-    const { data, error } = await supabase.functions.invoke('upload-to-youtube', {
+    // Mark post as uploading
+    await supabase
+      .from('posts')
+      .update({ status: 'scheduled' })
+      .eq('id', post.id);
+
+    // Trigger the YouTube upload edge function (fire and forget - don't wait for response)
+    console.log('Triggering YouTube upload in background...');
+    supabase.functions.invoke('upload-to-youtube', {
       body: { post_id: post.id, privacy }
+    }).then(({ data, error }) => {
+      if (error) {
+        console.error('Background upload error:', error);
+      } else {
+        console.log('Background upload triggered:', data);
+      }
     });
-
-    if (error) {
-      console.error('Edge function error:', error);
-      // Mark post as failed instead of deleting it
-      await supabase
-        .from('posts')
-        .update({
-          status: 'failed',
-          error_message: error.message || 'YouTube upload failed'
-        })
-        .eq('id', post.id);
-      throw new Error(error.message || 'YouTube upload failed');
-    }
-
-    console.log('YouTube upload successful:', data);
 
     return {
       success: true,
       post_id: post.id,
-      youtube_id: data?.youtube_id,
-      youtube_url: data?.youtube_url,
-      message: data?.message || 'Video uploaded to YouTube successfully'
+      message: 'Video is being uploaded to YouTube in the background. Check back in a few minutes.'
     };
 
   } catch (error: any) {
