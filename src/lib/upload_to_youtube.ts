@@ -10,6 +10,7 @@ export interface YouTubeUploadResult {
   success: boolean;
   post_id: string;
   youtube_id?: string;
+  youtube_url?: string;
   message: string;
   error?: string;
 }
@@ -67,11 +68,7 @@ export async function uploadToYouTube(
 
     console.log('Post created:', post.id);
 
-    // For now, since Edge Function isn't deployed, we'll mark this as pending
-    // and return success - the actual YouTube upload would happen via Edge Function
-    // TODO: Deploy edge function and uncomment below
-    
-    /*
+    // Call the YouTube upload edge function
     console.log('Calling YouTube upload edge function...');
     const { data, error } = await supabase.functions.invoke('upload-to-youtube', {
       body: { post_id: post.id, privacy }
@@ -79,23 +76,25 @@ export async function uploadToYouTube(
 
     if (error) {
       console.error('Edge function error:', error);
-      await supabase.from('posts').delete().eq('id', post.id);
+      // Mark post as failed instead of deleting it
+      await supabase
+        .from('posts')
+        .update({
+          status: 'failed',
+          error_message: error.message || 'YouTube upload failed'
+        })
+        .eq('id', post.id);
       throw new Error(error.message || 'YouTube upload failed');
     }
-    */
 
-    // Update post status to indicate it's queued
-    await supabase
-      .from('posts')
-      .update({ status: 'scheduled' })
-      .eq('id', post.id);
-
-    console.log('YouTube upload queued successfully');
+    console.log('YouTube upload successful:', data);
 
     return {
       success: true,
       post_id: post.id,
-      message: 'Video queued for YouTube upload. Edge function deployment required for actual upload.'
+      youtube_id: data?.youtube_id,
+      youtube_url: data?.youtube_url,
+      message: data?.message || 'Video uploaded to YouTube successfully'
     };
 
   } catch (error: any) {

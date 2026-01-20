@@ -24,10 +24,19 @@ serve(async (req) => {
       throw new Error('post_id is required')
     }
 
-    // Get the post data
+    // Get the post data with video and user info
     const { data: post, error: postError } = await supabaseClient
       .from('posts')
-      .select('*')
+      .select(`
+        *,
+        video:videos (
+          id,
+          user_id,
+          title,
+          caption,
+          storage_path
+        )
+      `)
       .eq('id', post_id)
       .single()
 
@@ -35,42 +44,76 @@ serve(async (req) => {
       throw new Error('Post not found')
     }
 
+    if (!post.video) {
+      throw new Error('Video data not found')
+    }
+
+    const userId = post.video.user_id
+    const videoTitle = post.video.title || 'Untitled Video'
+    const videoDescription = post.video.caption || ''
+    const storagePath = post.video.storage_path
+
+    // Get the user's YouTube connection from connected_accounts
+    const { data: youtubeAccount, error: accountError } = await supabaseClient
+      .from('connected_accounts')
+      .select('access_token, refresh_token, token_expires_at')
+      .eq('user_id', userId)
+      .eq('platform', 'youtube')
+      .single()
+
+    if (accountError || !youtubeAccount) {
+      throw new Error('YouTube account not connected for this user')
+    }
+
+    if (!youtubeAccount.refresh_token) {
+      throw new Error('YouTube refresh token missing')
+    }
+
+    // Get YouTube OAuth credentials from environment
+    const clientId = Deno.env.get('YOUTUBE_CLIENT_ID')
+    const clientSecret = Deno.env.get('YOUTUBE_CLIENT_SECRET')
+
+    if (!clientId || !clientSecret) {
+      throw new Error('YouTube OAuth credentials not configured. Please set YOUTUBE_CLIENT_ID and YOUTUBE_CLIENT_SECRET in Supabase secrets.')
+    }
+
     // Get the video file from storage
     const { data: fileData, error: fileError } = await supabaseClient
       .storage
-      .from(post.bucket || 'FreeBucket')
-      .download(post.path)
+      .from('FreeBucket')
+      .download(storagePath)
 
     if (fileError || !fileData) {
-      throw new Error('Failed to download video file')
+      throw new Error('Failed to download video file from storage')
     }
 
-    // Get YouTube credentials from environment
-    const clientId = Deno.env.get('YOUTUBE_CLIENT_ID')
-    const clientSecret = Deno.env.get('YOUTUBE_CLIENT_SECRET')
-    const refreshToken = Deno.env.get('YOUTUBE_REFRESH_TOKEN')
-
-    if (!clientId || !clientSecret || !refreshToken) {
-      throw new Error('YouTube credentials not configured. Please set YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, and YOUTUBE_REFRESH_TOKEN in Supabase secrets.')
-    }
-
-    // Get access token using refresh token
+    // Get access token using the user's refresh token
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         client_id: clientId,
         client_secret: clientSecret,
-        refresh_token: refreshToken,
+        refresh_token: youtubeAccount.refresh_token,
         grant_type: 'refresh_token',
       }),
     })
 
     const tokenData = await tokenResponse.json()
-    
+
     if (!tokenData.access_token) {
       throw new Error('Failed to get YouTube access token')
     }
+
+    // Update the access token in the database (refresh tokens may also be rotated)
+    await supabaseClient
+      .from('connected_accounts')
+      .update({
+        access_token: tokenData.access_token,
+        token_expires_at: new Date(Date.now() + (tokenData.expires_in || 3600) * 1000).toISOString()
+      })
+      .eq('user_id', userId)
+      .eq('platform', 'youtube')
 
     // Upload to YouTube using resumable upload
     // Step 1: Initialize upload
@@ -86,12 +129,12 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           snippet: {
-            title: post.title || 'Untitled Video',
-            description: post.description || '',
+            title: videoTitle,
+            description: videoDescription,
             categoryId: '22', // People & Blogs
           },
           status: {
-            privacyStatus: post.privacy || 'private',
+            privacyStatus: 'private', // Default to private for safety
             selfDeclaredMadeForKids: false,
           },
         }),
@@ -125,11 +168,11 @@ serve(async (req) => {
 
     const uploadResult = await uploadResponse.json()
 
-    // Update post with YouTube video ID
+    // Update post with YouTube video ID and status
     await supabaseClient
       .from('posts')
       .update({
-        youtube_id: uploadResult.id,
+        platform_post_id: uploadResult.id,
         status: 'posted',
         posted_at: new Date().toISOString(),
       })
@@ -139,6 +182,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         youtube_id: uploadResult.id,
+        youtube_url: `https://www.youtube.com/watch?v=${uploadResult.id}`,
         message: 'Video uploaded to YouTube successfully',
       }),
       {
