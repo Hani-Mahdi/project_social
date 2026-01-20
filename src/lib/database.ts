@@ -240,24 +240,53 @@ export async function createPost(post: CreatePostInput): Promise<Post> {
 }
 
 export async function createOrUpdatePost(
-  videoId: string, 
-  platform: Platform, 
+  videoId: string,
+  platform: Platform,
   updates: Partial<Pick<Post, 'status' | 'scheduled_at' | 'posted_at' | 'platform_post_id' | 'error_message'>>
 ): Promise<Post> {
-  const { data, error } = await supabase
+  // Try insert first (optimistic approach)
+  const { data: insertData, error: insertError } = await supabase
     .from('posts')
-    .upsert({
+    .insert({
       video_id: videoId,
       platform: platform,
       ...updates
-    }, {
-      onConflict: 'video_id,platform'
     })
     .select()
     .single();
 
-  if (error) throw error;
-  return data;
+  // If insert succeeded, return the new post
+  if (!insertError) {
+    return insertData;
+  }
+
+  // If error is NOT a duplicate key constraint, throw it
+  if (!insertError.message?.includes('duplicate key') &&
+      !insertError.message?.includes('posts_video_id_platform_key')) {
+    throw insertError;
+  }
+
+  // It's a duplicate - update instead
+  const { data: existingPost } = await supabase
+    .from('posts')
+    .select('id')
+    .eq('video_id', videoId)
+    .eq('platform', platform)
+    .single();
+
+  if (!existingPost) {
+    throw new Error('Failed to find existing post after duplicate key error');
+  }
+
+  const { data: updateData, error: updateError } = await supabase
+    .from('posts')
+    .update(updates)
+    .eq('id', existingPost.id)
+    .select()
+    .single();
+
+  if (updateError) throw updateError;
+  return updateData;
 }
 
 export async function updatePost(
