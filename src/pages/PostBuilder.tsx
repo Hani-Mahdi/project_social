@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Send, Calendar, Clock, Hash, AtSign, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { createVideo, saveDraft, getVideoWithPosts, type Platform } from "@/lib/database";
+import { uploadToYouTube } from "@/lib/upload_to_youtube";
 
 const platformIcons: Record<string, JSX.Element> = {
   TikTok: (
@@ -211,8 +212,29 @@ const PostBuilder = () => {
         scheduleType: 'now'
       });
 
+      // If YouTube is selected, trigger upload automatically
+      if (selectedPlatforms.includes('YouTube')) {
+        console.log("Triggering YouTube upload...");
+        const uploadResult = await uploadToYouTube({
+          videoId: currentVideoId,
+          privacy: 'public' // Default to public, could add UI for this later
+        });
+
+        if (uploadResult.success) {
+          console.log("YouTube upload triggered:", uploadResult.message);
+        } else {
+          console.warn("YouTube upload failed:", uploadResult.error);
+          setSaveError(`Posted to other platforms, but YouTube upload failed: ${uploadResult.error}`);
+        }
+      }
+
       setIsSaved(true);
       console.log("Posted to:", selectedPlatforms);
+
+      // Navigate to dashboard after successful post
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1500);
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : "Failed to post");
     } finally {
