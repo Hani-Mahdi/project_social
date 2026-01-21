@@ -18,11 +18,16 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { post_id } = await req.json()
+    const { post_id, privacy } = await req.json()
 
     if (!post_id) {
       throw new Error('post_id is required')
     }
+
+    // Validate privacy setting (default to private for safety)
+    const privacyStatus = ['public', 'private', 'unlisted'].includes(privacy)
+      ? privacy
+      : 'private'
 
     // Get the post data with video and user info
     const { data: post, error: postError } = await supabaseClient
@@ -134,7 +139,7 @@ serve(async (req) => {
             categoryId: '22', // People & Blogs
           },
           status: {
-            privacyStatus: 'private', // Default to private for safety
+            privacyStatus: privacyStatus,
             selfDeclaredMadeForKids: false,
           },
         }),

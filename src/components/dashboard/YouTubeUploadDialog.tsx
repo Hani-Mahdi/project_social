@@ -16,6 +16,7 @@ export function YouTubeUploadDialog({ isOpen, onClose }: YouTubeUploadDialogProp
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<YouTubeUploadResult | null>(null);
+  const [privacy, setPrivacy] = useState<'public' | 'private' | 'unlisted'>('public');
 
   useEffect(() => {
     if (isOpen) {
@@ -44,7 +45,7 @@ export function YouTubeUploadDialog({ isOpen, onClose }: YouTubeUploadDialogProp
     try {
       const uploadResult = await uploadToYouTube({
         videoId: selectedVideo.id,
-        privacy: 'private'
+        privacy: privacy
       });
 
       setResult(uploadResult);
@@ -136,6 +137,25 @@ export function YouTubeUploadDialog({ isOpen, onClose }: YouTubeUploadDialogProp
             </div>
           ) : (
             <>
+              <div className="mb-4">
+                <label className="text-sm text-neutral-400 block mb-2">Privacy Setting:</label>
+                <div className="flex gap-2">
+                  {(['public', 'unlisted', 'private'] as const).map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => setPrivacy(option)}
+                      className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        privacy === option
+                          ? 'bg-violet-500 text-white'
+                          : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'
+                      }`}
+                    >
+                      {option.charAt(0).toUpperCase() + option.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <p className="text-sm text-neutral-400 mb-4">Select a video to upload to YouTube:</p>
               <div className="space-y-2 overflow-y-auto flex-1 max-h-64">
                 {videos.map((video) => (
