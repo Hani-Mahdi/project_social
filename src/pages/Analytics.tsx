@@ -54,7 +54,7 @@ const platformColors = {
   youtube: "#FF0000",
   tiktok: "#00f2ea",
   instagram: "#E1306C",
-  twitter: "#1a1a1a"
+  twitter: "#1DA1F2"
 };
 
 const Analytics = () => {
@@ -168,17 +168,7 @@ const Analytics = () => {
   };
 
   const togglePlatform = (platform: string) => {
-    if (platform === 'all') {
-      setSelectedPlatforms(['all']);
-    } else {
-      const filtered = selectedPlatforms.filter(p => p !== 'all');
-      if (filtered.includes(platform)) {
-        const newSelection = filtered.filter(p => p !== platform);
-        setSelectedPlatforms(newSelection.length === 0 ? ['all'] : newSelection);
-      } else {
-        setSelectedPlatforms([...filtered, platform]);
-      }
-    }
+    setSelectedPlatforms([platform]);
   };
 
   const statCards = [
@@ -209,11 +199,11 @@ const Analytics = () => {
   ];
 
   const platformFilters = [
-    { id: 'all', icon: Layers, color: platformColors.all },
-    { id: 'youtube', icon: YouTubeIcon, color: platformColors.youtube },
-    { id: 'tiktok', icon: TikTokIcon, color: platformColors.tiktok },
-    { id: 'instagram', icon: InstagramIcon, color: platformColors.instagram },
-    { id: 'twitter', icon: TwitterIcon, color: platformColors.twitter }
+    { id: 'all', icon: Layers, gradient: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)' },
+    { id: 'youtube', icon: YouTubeIcon, gradient: 'linear-gradient(135deg, #FF0000 0%, #CC0000 100%)' },
+    { id: 'tiktok', icon: TikTokIcon, gradient: 'linear-gradient(135deg, #00f2ea 0%, #ff0050 100%)' },
+    { id: 'instagram', icon: InstagramIcon, gradient: 'linear-gradient(135deg, #833AB4 0%, #E1306C 50%, #F77737 100%)' },
+    { id: 'twitter', icon: TwitterIcon, gradient: 'linear-gradient(135deg, #1DA1F2 0%, #0c7abf 100%)' }
   ];
 
   return (
@@ -278,18 +268,22 @@ const Analytics = () => {
                 </div>
 
                 {/* Platform Filters */}
-                <div className="flex flex-wrap gap-2 mb-6">
+                <div className="flex gap-3 mb-6">
                   {platformFilters.map(filter => {
                     const Icon = filter.icon;
+                    const isActive = selectedPlatforms.includes(filter.id);
                     return (
                       <button
                         key={filter.id}
                         onClick={() => togglePlatform(filter.id)}
-                        className={`p-3 rounded-lg transition-all ${
-                          selectedPlatforms.includes(filter.id)
-                            ? 'bg-neutral-800 text-white border-2 border-neutral-600'
-                            : 'bg-neutral-900 text-neutral-500 border border-neutral-800 hover:bg-neutral-800 hover:text-neutral-400'
+                        className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                          isActive
+                            ? 'scale-110 shadow-lg'
+                            : 'opacity-50 hover:opacity-75 hover:scale-105'
                         }`}
+                        style={{
+                          background: isActive ? filter.gradient : '#262626'
+                        }}
                         title={filter.id.charAt(0).toUpperCase() + filter.id.slice(1)}
                       >
                         <Icon />
@@ -324,59 +318,59 @@ const Analytics = () => {
                       wrapperStyle={{ color: '#fff' }}
                     />
 
-                    {selectedPlatforms.includes('all') && (
+                    {selectedPlatforms[0] === 'all' && (
                       <Line
                         type="monotone"
                         dataKey="all"
                         name="All Uploads"
                         stroke={platformColors.all}
-                        strokeWidth={2}
-                        dot={{ fill: platformColors.all, r: 4 }}
-                        activeDot={{ r: 6 }}
+                        strokeWidth={3}
+                        dot={{ fill: platformColors.all, r: 5 }}
+                        activeDot={{ r: 7 }}
                       />
                     )}
-                    {selectedPlatforms.includes('youtube') && (
+                    {selectedPlatforms[0] === 'youtube' && (
                       <Line
                         type="monotone"
                         dataKey="youtube"
                         name="YouTube"
                         stroke={platformColors.youtube}
-                        strokeWidth={2}
-                        dot={{ fill: platformColors.youtube, r: 4 }}
-                        activeDot={{ r: 6 }}
+                        strokeWidth={3}
+                        dot={{ fill: platformColors.youtube, r: 5 }}
+                        activeDot={{ r: 7 }}
                       />
                     )}
-                    {selectedPlatforms.includes('tiktok') && (
+                    {selectedPlatforms[0] === 'tiktok' && (
                       <Line
                         type="monotone"
                         dataKey="tiktok"
                         name="TikTok"
                         stroke={platformColors.tiktok}
-                        strokeWidth={2}
-                        dot={{ fill: platformColors.tiktok, r: 4 }}
-                        activeDot={{ r: 6 }}
+                        strokeWidth={3}
+                        dot={{ fill: platformColors.tiktok, r: 5 }}
+                        activeDot={{ r: 7 }}
                       />
                     )}
-                    {selectedPlatforms.includes('instagram') && (
+                    {selectedPlatforms[0] === 'instagram' && (
                       <Line
                         type="monotone"
                         dataKey="instagram"
                         name="Instagram"
                         stroke={platformColors.instagram}
-                        strokeWidth={2}
-                        dot={{ fill: platformColors.instagram, r: 4 }}
-                        activeDot={{ r: 6 }}
+                        strokeWidth={3}
+                        dot={{ fill: platformColors.instagram, r: 5 }}
+                        activeDot={{ r: 7 }}
                       />
                     )}
-                    {selectedPlatforms.includes('twitter') && (
+                    {selectedPlatforms[0] === 'twitter' && (
                       <Line
                         type="monotone"
                         dataKey="twitter"
                         name="Twitter"
                         stroke={platformColors.twitter}
-                        strokeWidth={2}
-                        dot={{ fill: platformColors.twitter, r: 4 }}
-                        activeDot={{ r: 6 }}
+                        strokeWidth={3}
+                        dot={{ fill: platformColors.twitter, r: 5 }}
+                        activeDot={{ r: 7 }}
                       />
                     )}
                   </LineChart>
