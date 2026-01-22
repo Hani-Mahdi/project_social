@@ -13,6 +13,7 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
 import YouTubeCallback from "./pages/YouTubeCallback";
+import Analytics from "./pages/Analytics";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/dashboard/upload" element={<Upload />} />
           <Route path="/dashboard/library" element={<Library />} />
           <Route path="/dashboard/post" element={<PostBuilder />} />
+          <Route path="/dashboard/analytics" element={<Analytics />} />
           <Route path="/dashboard/settings" element={<Settings />} />
           <Route path="/auth/youtube/callback" element={<YouTubeCallback />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
