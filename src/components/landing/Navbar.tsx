@@ -36,22 +36,22 @@ export function Navbar() {
 
           {/* Nav links - Desktop */}
           <div className="hidden md:flex items-center">
-            <div className="flex items-center gap-1 p-1 rounded-full bg-white/5 border border-white/10">
+            <div className="flex items-center gap-1 p-1 rounded-md bg-white/5 border border-white/10">
               <a
                 href="#features"
-                className="px-4 py-1.5 text-sm text-neutral-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
+                className="px-4 py-1.5 text-sm text-neutral-400 hover:text-white hover:bg-white/10 rounded-md transition-all"
               >
                 Features
               </a>
               <a
                 href="#how-it-works"
-                className="px-4 py-1.5 text-sm text-neutral-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
+                className="px-4 py-1.5 text-sm text-neutral-400 hover:text-white hover:bg-white/10 rounded-md transition-all"
               >
                 How it works
               </a>
               <a
                 href="#pricing"
-                className="px-4 py-1.5 text-sm text-neutral-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
+                className="px-4 py-1.5 text-sm text-neutral-400 hover:text-white hover:bg-white/10 rounded-md transition-all"
               >
                 Pricing
               </a>
@@ -64,18 +64,18 @@ export function Navbar() {
               variant="ghost"
               size="sm"
               onClick={() => navigate("/auth")}
-              className="text-neutral-300 hover:text-white hover:bg-white/10 rounded-full px-4"
+              className="text-neutral-300 hover:text-white hover:bg-white/10 rounded-md px-4"
             >
               Log in
             </Button>
             <Button
               size="sm"
               onClick={() => navigate("/auth")}
-              className="bg-violet-600 hover:bg-violet-500 text-white rounded-full px-5 transition-all"
+              className="bg-violet-600 hover:bg-violet-500 text-white rounded-md px-5 transition-all"
             >
               <span className="flex items-center gap-1.5">
                 Get started
-                <ArrowRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-3.5 h-3.5 text-white" />
               </span>
             </Button>
           </div>
@@ -83,9 +83,9 @@ export function Navbar() {
           {/* Mobile menu button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+            className="md:hidden p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded-md transition-colors"
           >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileMenuOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
           </button>
         </div>
       </div>
@@ -99,19 +99,19 @@ export function Navbar() {
         <div className="container mx-auto px-4 py-4 space-y-3 bg-neutral-950/95 backdrop-blur-xl">
           <a
             href="#features"
-            className="block px-4 py-2 text-neutral-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+            className="block px-4 py-2 text-neutral-400 hover:text-white hover:bg-white/5 rounded-md transition-colors"
           >
             Features
           </a>
           <a
             href="#how-it-works"
-            className="block px-4 py-2 text-neutral-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+            className="block px-4 py-2 text-neutral-400 hover:text-white hover:bg-white/5 rounded-md transition-colors"
           >
             How it works
           </a>
           <a
             href="#pricing"
-            className="block px-4 py-2 text-neutral-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+            className="block px-4 py-2 text-neutral-400 hover:text-white hover:bg-white/5 rounded-md transition-colors"
           >
             Pricing
           </a>
@@ -120,14 +120,14 @@ export function Navbar() {
               variant="ghost"
               size="sm"
               onClick={() => navigate("/auth")}
-              className="flex-1 text-neutral-300 hover:text-white hover:bg-white/10 rounded-full"
+              className="flex-1 text-neutral-300 hover:text-white hover:bg-white/10 rounded-md"
             >
               Log in
             </Button>
             <Button
               size="sm"
               onClick={() => navigate("/auth")}
-              className="flex-1 bg-violet-600 text-white rounded-full"
+              className="flex-1 bg-violet-600 text-white rounded-md"
             >
               Get started
             </Button>

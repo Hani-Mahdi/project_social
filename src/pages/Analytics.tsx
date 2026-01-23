@@ -268,7 +268,7 @@ const Analytics = () => {
                 </div>
 
                 {/* Platform Filters */}
-                <div className="flex gap-3 mb-6">
+                <div className="flex gap-3 mb-6 relative z-0">
                   {platformFilters.map(filter => {
                     const Icon = filter.icon;
                     const isActive = selectedPlatforms.includes(filter.id);
@@ -276,7 +276,7 @@ const Analytics = () => {
                       <button
                         key={filter.id}
                         onClick={() => togglePlatform(filter.id)}
-                        className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                        className={`w-12 h-12 rounded-full flex items-center justify-center transition-all text-white ${
                           isActive
                             ? 'scale-110 shadow-lg'
                             : 'opacity-50 hover:opacity-75 hover:scale-105'
