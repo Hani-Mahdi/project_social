@@ -30,8 +30,8 @@ export function Sidebar() {
   };
 
   return (
-    <aside 
-      className={`fixed left-0 top-0 h-screen bg-neutral-900 border-r border-neutral-800 flex flex-col transition-all duration-300 ${
+    <aside
+      className={`fixed left-0 top-0 h-screen bg-neutral-900 border-r border-neutral-800 flex flex-col transition-all duration-300 z-50 ${
         collapsed ? "w-16" : "w-64"
       }`}
     >
