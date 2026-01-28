@@ -18,7 +18,7 @@ export function CTA() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link to={user ? "/dashboard" : "/login"}>
+            <Link to={user ? "/dashboard" : "/auth"}>
               <Button size="lg" className="bg-violet-600 text-white hover:bg-violet-500">
                 Get started free
                 <ArrowRight className="w-4 h-4 ml-1" />

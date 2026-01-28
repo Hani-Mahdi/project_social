@@ -187,8 +187,7 @@ const Dashboard = () => {
               {firstName.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h1 className="text-2xl font-semibold text-white mb-1">{fullName}</h1>
-              <p className="text-neutral-500 text-sm">{email}</p>
+              <h1 className="text-2xl font-semibold text-white">{fullName}</h1>
             </div>
           </div>
 

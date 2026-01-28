@@ -381,7 +381,11 @@ const Analytics = () => {
         </div>
       </div>
 
-      <UploadFab onClick={() => setIsUploadDialogOpen(true)} />
+      <UploadFab onSelectPlatform={(platform) => {
+        if (platform === "YouTube") {
+          setIsUploadDialogOpen(true);
+        }
+      }} />
       <YouTubeUploadDialog
         isOpen={isUploadDialogOpen}
         onClose={() => setIsUploadDialogOpen(false)}

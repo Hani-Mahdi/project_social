@@ -218,6 +218,7 @@ export async function getVideoPosts(videoId: string): Promise<Post[]> {
 
 export interface CreatePostInput {
   video_id: string;
+  user_id: string;
   platform: Platform;
   status?: PostStatus;
   scheduled_at?: string;
@@ -228,6 +229,7 @@ export async function createPost(post: CreatePostInput): Promise<Post> {
     .from('posts')
     .insert({
       video_id: post.video_id,
+      user_id: post.user_id,
       platform: post.platform,
       status: post.status || 'draft',
       scheduled_at: post.scheduled_at || null
@@ -242,13 +244,26 @@ export async function createPost(post: CreatePostInput): Promise<Post> {
 export async function createOrUpdatePost(
   videoId: string,
   platform: Platform,
-  updates: Partial<Pick<Post, 'status' | 'scheduled_at' | 'posted_at' | 'platform_post_id' | 'error_message'>>
+  updates: Partial<Pick<Post, 'status' | 'scheduled_at' | 'posted_at' | 'platform_post_id' | 'error_message'>>,
+  userId?: string
 ): Promise<Post> {
+  // Get current user if not provided
+  let currentUserId = userId;
+  if (!currentUserId) {
+    const { data: { user } } = await supabase.auth.getUser();
+    currentUserId = user?.id;
+  }
+
+  if (!currentUserId) {
+    throw new Error('User ID is required to create a post');
+  }
+
   // Try insert first (optimistic approach)
   const { data: insertData, error: insertError } = await supabase
     .from('posts')
     .insert({
       video_id: videoId,
+      user_id: currentUserId,
       platform: platform,
       ...updates
     })

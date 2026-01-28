@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, X, ArrowRight } from "lucide-react";
@@ -9,13 +9,13 @@ export function Navbar() {
   const navigate = useNavigate();
 
   // Handle scroll effect
-  useState(() => {
+  useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  });
+  }, []);
 
   return (
     <nav
@@ -26,15 +26,15 @@ export function Navbar() {
       }`}
     >
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
+        <div className="relative flex items-center justify-center h-16">
+          {/* Logo - positioned left */}
+          <Link to="/" className="absolute left-0 flex items-center gap-2 group">
             <span className="font-bold text-lg text-white">
               GrowthCopilot
             </span>
           </Link>
 
-          {/* Nav links - Desktop */}
+          {/* Nav links - Desktop (centered) */}
           <div className="hidden md:flex items-center">
             <div className="flex items-center gap-1 p-1 rounded-md bg-white/5 border border-white/10">
               <a
@@ -49,17 +49,11 @@ export function Navbar() {
               >
                 How it works
               </a>
-              <a
-                href="#pricing"
-                className="px-4 py-1.5 text-sm text-neutral-400 hover:text-white hover:bg-white/10 rounded-md transition-all"
-              >
-                Pricing
-              </a>
             </div>
           </div>
 
-          {/* CTA - Desktop */}
-          <div className="hidden md:flex items-center gap-3">
+          {/* CTA - Desktop (positioned right) */}
+          <div className="hidden md:flex items-center gap-3 absolute right-0">
             <Button
               variant="ghost"
               size="sm"
@@ -83,7 +77,7 @@ export function Navbar() {
           {/* Mobile menu button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded-md transition-colors"
+            className="md:hidden absolute right-0 p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded-md transition-colors"
           >
             {mobileMenuOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
           </button>
@@ -108,12 +102,6 @@ export function Navbar() {
             className="block px-4 py-2 text-neutral-400 hover:text-white hover:bg-white/5 rounded-md transition-colors"
           >
             How it works
-          </a>
-          <a
-            href="#pricing"
-            className="block px-4 py-2 text-neutral-400 hover:text-white hover:bg-white/5 rounded-md transition-colors"
-          >
-            Pricing
           </a>
           <div className="pt-3 border-t border-white/5 flex gap-2">
             <Button

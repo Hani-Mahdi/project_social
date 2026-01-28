@@ -1,20 +1,15 @@
-import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
 import { ConnectYouTube } from "@/components/dashboard/ConnectYouTube";
+import { Sidebar } from "@/components/dashboard/Sidebar";
 
 export default function Settings() {
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-neutral-950 text-white">
+      <Sidebar />
+      <main className="ml-64 min-h-screen px-12 py-10">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Link 
-            to="/dashboard" 
-            className="p-2 rounded-lg hover:bg-neutral-800 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <h1 className="text-2xl font-bold">Settings</h1>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
+          <p className="text-neutral-400">Manage your account and connected platforms</p>
         </div>
 
         {/* Connected Accounts Section */}
@@ -57,7 +52,7 @@ export default function Settings() {
             </div>
           </div>
         </section>
-      </div>
+      </main>
     </div>
   );
 }

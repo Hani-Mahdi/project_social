@@ -173,7 +173,7 @@ export function Hero() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link to={user ? "/dashboard" : "/login"}>
+            <Link to={user ? "/dashboard" : "/auth"}>
               <Button 
                 size="lg" 
                 className="bg-violet-600 text-white hover:bg-violet-500 px-8"
@@ -182,14 +182,16 @@ export function Hero() {
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
-            <Button 
-              variant="ghost" 
-              size="lg"
-              className="text-neutral-300 hover:text-white hover:bg-white/10"
-            >
-              <Play className="w-4 h-4 mr-2" />
-              Watch demo
-            </Button>
+            <a href="#how-it-works">
+              <Button
+                variant="ghost"
+                size="lg"
+                className="text-neutral-300 hover:text-white hover:bg-white/10"
+              >
+                <Play className="w-4 h-4 mr-2" />
+                See how it works
+              </Button>
+            </a>
           </div>
 
           <p className="mt-8 text-sm text-neutral-500">

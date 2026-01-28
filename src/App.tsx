@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
 import YouTubeCallback from "./pages/YouTubeCallback";
 import Analytics from "./pages/Analytics";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -27,12 +28,12 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/dashboard/upload" element={<Upload />} />
-          <Route path="/dashboard/library" element={<Library />} />
-          <Route path="/dashboard/post" element={<PostBuilder />} />
-          <Route path="/dashboard/analytics" element={<Analytics />} />
-          <Route path="/dashboard/settings" element={<Settings />} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/dashboard/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
+          <Route path="/dashboard/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
+          <Route path="/dashboard/post" element={<ProtectedRoute><PostBuilder /></ProtectedRoute>} />
+          <Route path="/dashboard/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+          <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/auth/youtube/callback" element={<YouTubeCallback />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
