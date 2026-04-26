@@ -1,0 +1,42 @@
+title = "project_social gitleaks config"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "gemini-api-key"
+description = "Google Gemini / Generative Language API key"
+regex = '''AIza[0-9A-Za-z_-]{35}'''
+keywords = ["AIza"]
+
+[[rules]]
+id = "supabase-secret-key"
+description = "Supabase secret key (sb_secret_...)"
+regex = '''sb_secret_[A-Za-z0-9_-]{20,}'''
+keywords = ["sb_secret_"]
+
+[[rules]]
+id = "google-oauth-client-secret"
+description = "Google OAuth 2.0 client secret"
+regex = '''GOCSPX-[A-Za-z0-9_\-]{20,}'''
+keywords = ["GOCSPX-"]
+
+[allowlist]
+description = "Allow placeholders in docs and example env files"
+paths = [
+  '''(.*?)\.example$''',
+  '''^supabase/functions/\.env\.example$''',
+]
+regexes = [
+  '''AIzaSy\.\.\.''',
+  '''AIza\.\.\.''',
+  '''your_[a-z_]*here''',
+  '''AI\.\.\.''',
+  '''GEMINI_API_KEY=AI\.\.\.''',
+  # Common placeholder tokens used in docs/curl examples
+  '''YOUR_[A-Z_]+(_KEY|_SECRET|_TOKEN)''',
+  '''Bearer\s+YOUR_[A-Z_]+''',
+  '''<[a-z_-]+>''',
+  # Smoke-test marker used by scripts/install-hooks.sh — never a real key
+  '''AIzaSyTEST[A-Z0-9]+''',
+]
