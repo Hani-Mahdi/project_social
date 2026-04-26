@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 // Get allowed origins from environment or default to localhost for development
 const allowedOrigins = Deno.env.get('ALLOWED_ORIGINS')?.split(',') || [
   'http://localhost:8080',
+  'http://localhost:8081',
   'http://localhost:5173',
   'https://your-production-domain.com'
 ]

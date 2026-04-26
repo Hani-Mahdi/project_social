@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { UploadFab } from "@/components/dashboard/UploadFab";
 import { YouTubeUploadDialog } from "@/components/dashboard/YouTubeUploadDialog";
@@ -8,36 +8,10 @@ import { ArrowLeft, Send, Calendar, Clock, Hash, AtSign, Loader2 } from "lucide-
 import { useAuth } from "@/hooks/useAuth";
 import { createVideo, saveDraft, getVideoWithPosts, type Platform } from "@/lib/database";
 import { uploadToYouTube } from "@/lib/upload_to_youtube";
-
-const platformIcons: Record<string, JSX.Element> = {
-  TikTok: (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
-    </svg>
-  ),
-  Instagram: (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-    </svg>
-  ),
-  YouTube: (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-    </svg>
-  ),
-  Twitter: (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-    </svg>
-  ),
-};
-
-const platformGradients: Record<string, string> = {
-  TikTok: "linear-gradient(135deg, #00f2ea 0%, #ff0050 100%)",
-  Instagram: "linear-gradient(135deg, #833AB4 0%, #E1306C 50%, #F77737 100%)",
-  YouTube: "linear-gradient(135deg, #FF0000 0%, #CC0000 100%)",
-  Twitter: "linear-gradient(135deg, #1a1a1a 0%, #333333 100%)",
-};
+import { PLATFORM_LIST, PLATFORMS } from "@/constants/platforms";
+import { toast } from "@/components/ui/sonner";
+import { optimizePost, OptimizePostError, type OptimizationResultItem } from "@/lib/ai/client";
+import { OptimizationPanel } from "@/components/optimization/OptimizationPanel";
 
 // Map display names to database platform values
 const platformMap: Record<string, Platform> = {
@@ -50,8 +24,13 @@ const platformMap: Record<string, Platform> = {
 const PostBuilder = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
-  const { videoUrl, storagePath, videoName, videoId: existingVideoId } = location.state || {};
+  const { videoUrl, storagePath, videoName, videoId: stateVideoId } = location.state || {};
+  const queryVideoId = searchParams.get("videoId");
+  const existingVideoId = stateVideoId || queryVideoId;
+  const shouldAutoOptimize = searchParams.get("autoOptimize") === "1";
+  const hasAutoOptimizedRef = useRef(false);
 
   const [videoId, setVideoId] = useState<string | null>(existingVideoId || null);
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(videoUrl || null);
@@ -68,8 +47,17 @@ const PostBuilder = () => {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [loadingDraft, setLoadingDraft] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [optimizing, setOptimizing] = useState(false);
+  const [optimizationResult, setOptimizationResult] = useState<Record<string, OptimizationResultItem> | null>(null);
+  const [usage, setUsage] = useState<{ count: number; limit: number } | null>(null);
 
-  const platforms = ["TikTok", "Instagram", "YouTube", "Twitter"];
+  const platforms = PLATFORM_LIST.map((platform) => platform.name);
+  const oneLiner = caption || title || currentVideoName || videoName || "";
+
+  const getSelectedPlatformIds = (): Platform[] =>
+    selectedPlatforms
+      .map((platformName) => platformMap[platformName])
+      .filter(Boolean);
 
   // Load existing draft data if videoId is provided
   useEffect(() => {
@@ -126,6 +114,21 @@ const PostBuilder = () => {
       cancelled = true;
     };
   }, [existingVideoId, user]);
+
+  useEffect(() => {
+    if (
+      !shouldAutoOptimize ||
+      hasAutoOptimizedRef.current ||
+      loadingDraft ||
+      !videoId ||
+      selectedPlatforms.length === 0
+    ) {
+      return;
+    }
+
+    hasAutoOptimizedRef.current = true;
+    void handleOptimize();
+  }, [shouldAutoOptimize, loadingDraft, videoId, selectedPlatforms]);
 
   // Always show save modal if video is uploaded and not yet saved
   const hasUnsavedChanges = !isSaved && (currentVideoUrl || videoUrl);
@@ -214,14 +217,14 @@ const PostBuilder = () => {
 
       // If YouTube is selected, trigger upload automatically
       if (selectedPlatforms.includes('YouTube')) {
-        console.log("Triggering YouTube upload...");
+        if (import.meta.env.DEV) console.log("Triggering YouTube upload...");
         const uploadResult = await uploadToYouTube({
           videoId: currentVideoId,
           privacy: 'public' // Default to public, could add UI for this later
         });
 
         if (uploadResult.success) {
-          console.log("YouTube upload triggered:", uploadResult.message);
+          if (import.meta.env.DEV) console.log("YouTube upload triggered:", uploadResult.message);
         } else {
           console.warn("YouTube upload failed:", uploadResult.error);
           setSaveError(`Posted to other platforms, but YouTube upload failed: ${uploadResult.error}`);
@@ -229,7 +232,7 @@ const PostBuilder = () => {
       }
 
       setIsSaved(true);
-      console.log("Posted to:", selectedPlatforms);
+      if (import.meta.env.DEV) console.log("Posted to:", selectedPlatforms);
 
       // Navigate to dashboard after successful post
       setTimeout(() => {
@@ -274,6 +277,55 @@ const PostBuilder = () => {
     }
   };
 
+  const handleOptimize = async (nonce?: string) => {
+    if (!user || (!currentVideoUrl && !videoUrl) || selectedPlatforms.length === 0) {
+      toast.error("Select at least one platform before optimizing");
+      return;
+    }
+
+    setOptimizing(true);
+    try {
+      const currentVideoId = await ensureVideoRecord();
+      const response = await optimizePost({
+        videoId: currentVideoId,
+        oneLiner: nonce ? `${oneLiner} ${nonce}` : oneLiner,
+        platforms: getSelectedPlatformIds(),
+      });
+      setOptimizationResult(response.result);
+      setUsage(response.usage ?? null);
+    } catch (error) {
+      if (error instanceof OptimizePostError) {
+        const description = error.detail ? error.detail : error.code ? `Code: ${error.code}` : undefined;
+        toast.error(error.message, description ? { description } : undefined);
+        if (import.meta.env.DEV) console.error("optimize-post failed", error);
+      } else {
+        const message = error instanceof Error ? error.message : "Failed to optimize post";
+        toast.error(message);
+      }
+    } finally {
+      setOptimizing(false);
+    }
+  };
+
+  const handleUseOptimization = (platform: Platform, suggestion: OptimizationResultItem) => {
+    const platformName = PLATFORMS[platform].name;
+    if (!selectedPlatforms.includes(platformName)) {
+      setSelectedPlatforms((prev) => [...prev, platformName]);
+    }
+    setTitle(suggestion.title);
+    setCaption(`${suggestion.hook}\n\n${suggestion.caption}\n\n${suggestion.hashtags.join(" ")}`.trim());
+    setIsSaved(false);
+    toast.success(`${platformName} suggestion applied`);
+  };
+
+  const handleEditOptimization = (platform: Platform, suggestion: OptimizationResultItem) => {
+    handleUseOptimization(platform, suggestion);
+  };
+
+  const handleRegenerate = async () => {
+    await handleOptimize(`nonce:${Date.now()}`);
+  };
+
   if (loadingDraft) {
     return (
       <div className="min-h-screen bg-neutral-950">
@@ -288,7 +340,7 @@ const PostBuilder = () => {
     );
   }
 
-  if (!videoUrl && !currentVideoUrl) {
+  if (!videoUrl && !currentVideoUrl && !videoId) {
     return (
       <div className="min-h-screen bg-neutral-950">
         <Sidebar />
@@ -349,7 +401,10 @@ const PostBuilder = () => {
             <div>
               <h2 className="text-lg font-medium text-white mb-4">Select Platforms</h2>
               <div className="grid grid-cols-2 gap-3">
-                {platforms.map(platform => (
+                {platforms.map((platform) => {
+                  const platformId = platformMap[platform];
+                  const Icon = PLATFORMS[platformId].icon;
+                  return (
                   <button
                     key={platform}
                     onClick={() => togglePlatform(platform)}
@@ -361,9 +416,9 @@ const PostBuilder = () => {
                   >
                     <div 
                       className="w-10 h-10 rounded-lg flex items-center justify-center text-white"
-                      style={{ background: platformGradients[platform] }}
+                      style={{ background: PLATFORMS[platformId].gradient }}
                     >
-                      {platformIcons[platform]}
+                      <Icon className="h-5 w-5" />
                     </div>
                     <span className="font-medium text-white">{platform}</span>
                     {selectedPlatforms.includes(platform) && (
@@ -374,7 +429,8 @@ const PostBuilder = () => {
                       </div>
                     )}
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -417,6 +473,32 @@ const PostBuilder = () => {
                 </button>
               </div>
             </div>
+
+            <div>
+              <Button
+                type="button"
+                onClick={() => handleOptimize()}
+                disabled={optimizing || selectedPlatforms.length === 0}
+                className="w-full h-12 bg-violet-600 hover:bg-violet-500 text-white font-medium rounded-xl disabled:opacity-50"
+              >
+                {optimizing ? "Optimizing..." : "Optimize for all platforms"}
+              </Button>
+              {usage && (
+                <p className="mt-2 text-sm text-neutral-400">
+                  {Math.max(usage.limit - usage.count, 0)}/{usage.limit} free optimizations left today
+                </p>
+              )}
+            </div>
+
+            {optimizationResult && (
+              <OptimizationPanel
+                result={optimizationResult}
+                onUse={handleUseOptimization}
+                onEdit={handleEditOptimization}
+                onRegenerate={handleRegenerate}
+                isRegenerating={optimizing}
+              />
+            )}
 
             {/* Schedule */}
             <div>

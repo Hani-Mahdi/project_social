@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import type { ReactNode } from "react";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Upload from "./pages/Upload";
@@ -15,8 +16,15 @@ import Settings from "./pages/Settings";
 import YouTubeCallback from "./pages/YouTubeCallback";
 import Analytics from "./pages/Analytics";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const queryClient = new QueryClient();
+
+const ProtectedPage = ({ children }: { children: ReactNode }) => (
+  <ProtectedRoute>
+    <ErrorBoundary>{children}</ErrorBoundary>
+  </ProtectedRoute>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -28,12 +36,12 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/dashboard/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
-          <Route path="/dashboard/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
-          <Route path="/dashboard/post" element={<ProtectedRoute><PostBuilder /></ProtectedRoute>} />
-          <Route path="/dashboard/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
-          <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedPage><Dashboard /></ProtectedPage>} />
+          <Route path="/dashboard/upload" element={<ProtectedPage><Upload /></ProtectedPage>} />
+          <Route path="/dashboard/library" element={<ProtectedPage><Library /></ProtectedPage>} />
+          <Route path="/dashboard/post" element={<ProtectedPage><PostBuilder /></ProtectedPage>} />
+          <Route path="/dashboard/analytics" element={<ProtectedPage><Analytics /></ProtectedPage>} />
+          <Route path="/dashboard/settings" element={<ProtectedPage><Settings /></ProtectedPage>} />
           <Route path="/auth/youtube/callback" element={<YouTubeCallback />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

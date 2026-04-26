@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { Video, Upload, TrendingUp, Calendar, Layers } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
+import { PLATFORMS } from "@/constants/platforms";
 
 // Platform Icons
 const TikTokIcon = () => (
@@ -51,10 +52,10 @@ interface TimelineData {
 
 const platformColors = {
   all: "#8b5cf6",
-  youtube: "#FF0000",
-  tiktok: "#000000",
-  instagram: "#E1306C",
-  twitter: "#1DA1F2"
+  youtube: PLATFORMS.youtube.color,
+  tiktok: PLATFORMS.tiktok.color,
+  instagram: PLATFORMS.instagram.color,
+  twitter: PLATFORMS.twitter.color
 };
 
 const Analytics = () => {
@@ -197,13 +198,18 @@ const Analytics = () => {
       color: "bg-neutral-800"
     }
   ];
+  const shortVideoPlatformConfig = PLATFORMS.tiktok;
 
   const platformFilters = [
     { id: 'all', icon: Layers, gradient: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)' },
-    { id: 'youtube', icon: YouTubeIcon, gradient: 'linear-gradient(135deg, #FF0000 0%, #CC0000 100%)' },
-    { id: 'tiktok', icon: TikTokIcon, gradient: 'linear-gradient(135deg, #000000 0%, #1a1a1a 100%)' },
-    { id: 'instagram', icon: InstagramIcon, gradient: 'linear-gradient(135deg, #833AB4 0%, #E1306C 50%, #F77737 100%)' },
-    { id: 'twitter', icon: TwitterIcon, gradient: 'linear-gradient(135deg, #1DA1F2 0%, #0c7abf 100%)' }
+    { id: 'youtube', icon: YouTubeIcon, gradient: PLATFORMS.youtube.gradient },
+    {
+      id: 'tiktok',
+      icon: TikTokIcon,
+      gradient: shortVideoPlatformConfig.gradient
+    },
+    { id: 'instagram', icon: InstagramIcon, gradient: PLATFORMS.instagram.gradient },
+    { id: 'twitter', icon: TwitterIcon, gradient: PLATFORMS.twitter.gradient }
   ];
 
   return (

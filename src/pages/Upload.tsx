@@ -4,7 +4,7 @@ import { UploadFab } from "@/components/dashboard/UploadFab";
 
 const Upload = () => {
   const handleUploadComplete = (url: string) => {
-    console.log("Video uploaded to:", url);
+    if (import.meta.env.DEV) console.log("Video uploaded to:", url);
   };
 
   return (
@@ -26,7 +26,11 @@ const Upload = () => {
         </div>
       </main>
 
-      <UploadFab onSelectPlatform={(platform) => console.log("Already on upload page, selected:", platform)} />
+      <UploadFab
+        onSelectPlatform={(platform) => {
+          if (import.meta.env.DEV) console.log("Already on upload page, selected:", platform);
+        }}
+      />
     </div>
   );
 };

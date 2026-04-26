@@ -44,7 +44,7 @@ export async function uploadToYouTube(
       throw new Error('Video not found or access denied');
     }
 
-    console.log('Creating/updating post record for YouTube upload...');
+    if (import.meta.env.DEV) console.log('Creating/updating post record for YouTube upload...');
 
     // Create or update a post record in the database (uses upsert to handle existing records)
     const { data: post, error: postError } = await supabase
@@ -66,7 +66,7 @@ export async function uploadToYouTube(
     }
     if (!post) throw new Error('Failed to create/update post record');
 
-    console.log('Post created:', post.id);
+    if (import.meta.env.DEV) console.log('Post created:', post.id);
 
     // Mark post as uploading
     await supabase
@@ -75,14 +75,14 @@ export async function uploadToYouTube(
       .eq('id', post.id);
 
     // Trigger the YouTube upload edge function (fire and forget - don't wait for response)
-    console.log('Triggering YouTube upload in background...');
+    if (import.meta.env.DEV) console.log('Triggering YouTube upload in background...');
     supabase.functions.invoke('upload-to-youtube', {
       body: { post_id: post.id, privacy }
     }).then(({ data, error }) => {
       if (error) {
         console.error('Background upload error:', error);
       } else {
-        console.log('Background upload triggered:', data);
+        if (import.meta.env.DEV) console.log('Background upload triggered:', data);
       }
     });
 

@@ -23,6 +23,7 @@ export interface Video {
   storage_path: string;
   public_url: string;
   caption: string | null;
+  transcript_snippet?: string | null;
   status: VideoStatus;
   scheduled_at: string | null;
   posted_at: string | null;
@@ -53,6 +54,44 @@ export interface UserStats {
   scheduledVideos: number;
   postedVideos: number;
   platformStats: Record<Platform, number>;
+}
+
+export interface PerformanceComparison {
+  optimizedAvgViews: number;
+  unoptimizedAvgViews: number;
+  ratio: number;
+  optimizedCount: number;
+  unoptimizedCount: number;
+}
+
+interface PostMetricRow {
+  views: number;
+  fetched_at: string;
+}
+
+interface PostOptimizationRow {
+  id: string;
+}
+
+interface PostForPerformance {
+  post_metrics: PostMetricRow[] | null;
+  post_optimizations: PostOptimizationRow[] | null;
+}
+
+interface VideoPostOptimizationRow {
+  id: string;
+}
+
+interface VideoPostRow {
+  id: string;
+  post_optimizations: VideoPostOptimizationRow[] | null;
+}
+
+interface VideoForOptimizationCheck {
+  id: string;
+  title: string | null;
+  created_at: string;
+  posts: VideoPostRow[] | null;
 }
 
 // =============================================
@@ -89,27 +128,33 @@ export async function updateUserProfile(
 // VIDEO FUNCTIONS
 // =============================================
 
-export async function getUserVideos(userId: string): Promise<Video[]> {
+export async function getUserVideos(userId: string): Promise<VideoWithPosts[]> {
   const { data, error } = await supabase
     .from('videos')
-    .select('*')
+    .select('*, posts(*)')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data || [];
+  return (data || []).map((video) => ({
+    ...video,
+    posts: video.posts ?? [],
+  }));
 }
 
-export async function getRecentVideos(userId: string, limit: number = 5): Promise<Video[]> {
+export async function getRecentVideos(userId: string, limit: number = 5): Promise<VideoWithPosts[]> {
   const { data, error } = await supabase
     .from('videos')
-    .select('*')
+    .select('*, posts(*)')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(limit);
 
   if (error) throw error;
-  return data || [];
+  return (data || []).map((video) => ({
+    ...video,
+    posts: video.posts ?? [],
+  }));
 }
 
 export async function getVideoById(videoId: string): Promise<Video | null> {
@@ -370,6 +415,86 @@ export async function getUserStats(userId: string): Promise<UserStats> {
     postedVideos: videos.filter(v => v.status === 'posted').length,
     platformStats
   };
+}
+
+export async function getPerformanceComparison(): Promise<PerformanceComparison> {
+  const { data, error } = await supabase
+    .from('posts')
+    .select(`
+      id,
+      post_metrics(views, fetched_at),
+      post_optimizations(id)
+    `)
+    .eq('status', 'posted');
+
+  if (error || !data) {
+    return {
+      optimizedAvgViews: 0,
+      unoptimizedAvgViews: 0,
+      ratio: 0,
+      optimizedCount: 0,
+      unoptimizedCount: 0,
+    };
+  }
+
+  let optSum = 0;
+  let optCount = 0;
+  let unoptSum = 0;
+  let unoptCount = 0;
+
+  for (const post of data as PostForPerformance[]) {
+    const metrics = [...(post.post_metrics ?? [])].sort(
+      (a, b) => new Date(b.fetched_at).getTime() - new Date(a.fetched_at).getTime(),
+    );
+    const views = metrics[0]?.views ?? 0;
+    const isOptimized = (post.post_optimizations ?? []).length > 0;
+
+    if (isOptimized) {
+      optSum += views;
+      optCount++;
+    } else {
+      unoptSum += views;
+      unoptCount++;
+    }
+  }
+
+  const optimizedAvgViews = optCount > 0 ? Math.round(optSum / optCount) : 0;
+  const unoptimizedAvgViews = unoptCount > 0 ? Math.round(unoptSum / unoptCount) : 0;
+  const ratio = unoptimizedAvgViews > 0 ? optimizedAvgViews / unoptimizedAvgViews : 0;
+
+  return {
+    optimizedAvgViews,
+    unoptimizedAvgViews,
+    ratio,
+    optimizedCount: optCount,
+    unoptimizedCount: unoptCount,
+  };
+}
+
+export async function getMostRecentUnoptimizedVideo(): Promise<{
+  id: string;
+  title: string | null;
+  created_at: string;
+} | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data } = await supabase
+    .from('videos')
+    .select(`
+      id, title, created_at,
+      posts(id, post_optimizations(id))
+    `)
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  if (!data) return null;
+
+  return (data as VideoForOptimizationCheck[]).find((video) => {
+    const posts = video.posts ?? [];
+    return posts.length === 0 || posts.every((post) => (post.post_optimizations ?? []).length === 0);
+  }) ?? null;
 }
 
 // =============================================

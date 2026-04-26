@@ -12,6 +12,7 @@ lerna-debug.log*
 .env.local
 .env.development
 .env.production
+supabase/functions/.env
 
 # MCP config (contains auth tokens)
 .mcp.json

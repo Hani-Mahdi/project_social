@@ -37,7 +37,7 @@ export function useAuth() {
     // Only set timeout if user is logged in
     if (isLoggedInRef.current) {
       timeoutRef.current = setTimeout(async () => {
-        console.log('Session timeout due to inactivity')
+        if (import.meta.env.DEV) console.log('Session timeout due to inactivity')
         await signOut()
         window.location.href = '/auth?timeout=true'
       }, INACTIVITY_TIMEOUT)
@@ -89,7 +89,7 @@ export function useAuth() {
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('Auth state changed:', event)
+        if (import.meta.env.DEV) console.log('Auth state changed:', event)
         setAuthState(prev => ({
           ...prev,
           user: session?.user ?? null,
